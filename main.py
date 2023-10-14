@@ -1,5 +1,9 @@
 # импортируем библиотеки и наш модуль utils
+import json
 import random
+
+from aiogram.types import ParseMode
+
 import utils as ut
 from configure import token
 from aiogram import Bot, types, Dispatcher, executor
@@ -125,7 +129,8 @@ async def cmd_get_random_board_game(message: types.Message):
 async def cmd_rent_board_game(message: types.Message):
     await message.answer(ut.rent_add_text)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    rent_keyboard.add(types.KeyboardButton(text='Открыть веб-страницу', web_app=WebAppInfo(
+    rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
+    rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
         url="https://hack.alieksandrzviez.repl.co")))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
@@ -137,7 +142,7 @@ async def cmd_rent_board_game(message: types.Message):
 async def cmd_bot_info(message: types.Message):
     # создаем кнопки
     poll_keyboard = types.InlineKeyboardMarkup()
-    poll_keyboard.add(types.InlineKeyboardButton(text = f"{'🚴'} Доставка", callback_data='delivery'))
+    poll_keyboard.add(types.InlineKeyboardButton(text=f"{'🚴'} Доставка", callback_data='delivery'))
     poll_keyboard.add(types.InlineKeyboardButton(text=f"{'💰'} Оплата", callback_data='payment'))
     poll_keyboard.add(types.InlineKeyboardButton(text=f"{'❓'} FAQ", callback_data='faq'))
     # выводим начальной сообщение
@@ -172,7 +177,8 @@ async def cmd_return_main_menu(message: types.Message):
 
 #############################################
 
-#Хэндлер на текстовое сообщение с текстом “Пока!”
+
+# Хэндлер на текстовое сообщение с текстом “Пока!”
 @dp.message_handler(lambda message: message.text == "Пока!")
 async def cmd_end(message: types.Message):
     # убираем клавиатуру
