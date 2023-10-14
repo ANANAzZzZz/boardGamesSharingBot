@@ -3,6 +3,7 @@ import random
 import utils as ut
 from configure import token
 from aiogram import Bot, types, Dispatcher, executor
+from aiogram.types.web_app_info import WebAppInfo
 
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
@@ -59,7 +60,8 @@ async def action_cancel(message: types.Message):
 async def action_cancel(message: types.Message):
     await message.answer(ut.rent_add_text)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    rent_keyboard.add(types.KeyboardButton(text='Добавить настолку'))
+    rent_keyboard.add(types.KeyboardButton(text='Открыть веб-страницу', web_app=WebAppInfo(
+        url="https://hack.alieksandrzviez.repl.co")))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
 
