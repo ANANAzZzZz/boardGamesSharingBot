@@ -1,15 +1,21 @@
 # импортируем библиотеки и наш модуль utils
+import json
 import random
+
+from aiogram.types import ParseMode
+
 import utils as ut
 from configure import token
 from aiogram import Bot, types, Dispatcher, executor
 from aiogram.types.web_app_info import WebAppInfo
+import urllib.parse
 
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 
-#Хэндлер, реагирующий на текстовое сообщение с текстом “/start”
+
+# Хэндлер, реагирующий на текстовое сообщение с текстом “/start”
 @dp.message_handler(commands=["start"], is_reply=False)
 async def cmd_start(message: types.Message):
     # создаем кнопки
@@ -25,7 +31,8 @@ async def cmd_start(message: types.Message):
     await message.answer_sticker(hello_sticker)
     await message.reply(start_msg, reply_markup=poll_keyboard)
 
-#Хэндлер на текстовое сообщение с текстом “Хочу заказат”
+
+# Хэндлер на текстовое сообщение с текстом “Хочу заказат”
 @dp.message_handler(lambda message: message.text == "Хочу заказать")
 async def action_cancel(message: types.Message):
     await message.reply("Хочу заказать")
@@ -36,29 +43,39 @@ async def action_cancel(message: types.Message):
 async def action_cancel(message: types.Message):
     await message.answer(ut.rent_add_text)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    rent_keyboard.add(types.KeyboardButton(text='Открыть веб-страницу', web_app=WebAppInfo(
+    rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
+    rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
         url="https://hack.alieksandrzviez.repl.co")))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
 
-#Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
+
+@dp.message_handler(content_types=['web_app_data'])
+async def web_app(message: types.Message):
+    board_game = json.loads(message.web_app_data.data)
+    await message.answer_photo(caption=ut.getDescGame(board_game), photo=urllib.parse.urlparse(board_game["img"]).geturl(), parse_mode=ParseMode.HTML)
+
+
+# Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
 @dp.message_handler(lambda message: message.text == "Узнать подробнее о боте")
 async def cmd_bot_info(message: types.Message):
     # создаем кнопки
     poll_keyboard = types.InlineKeyboardMarkup()
-    poll_keyboard.add(types.InlineKeyboardButton(text = f"{'🚴'} Доставка", callback_data='delivery'))
+    poll_keyboard.add(types.InlineKeyboardButton(text=f"{'🚴'} Доставка", callback_data='delivery'))
     poll_keyboard.add(types.InlineKeyboardButton(text=f"{'💰'} Оплата", callback_data='payment'))
     poll_keyboard.add(types.InlineKeyboardButton(text=f"{'❓'} FAQ", callback_data='faq'))
     # выводим начальной сообщение
     start_msg = ut.create_bot_info_msg()
     await message.reply(start_msg, reply_markup=poll_keyboard)
 
-#Хэндлер на текстовое сообщение с текстом “Вернуться в главное меню”
+
+# Хэндлер на текстовое сообщение с текстом “Вернуться в главное меню”
 @dp.message_handler(lambda message: message.text == "Вернуться в главное меню")
 async def action_cancel(message: types.Message):
     await message.reply("Сдаю настолку")
 
-#Хэндлер на текстовое сообщение с текстом “Пока!”
+
+# Хэндлер на текстовое сообщение с текстом “Пока!”
 @dp.message_handler(lambda message: message.text == "Пока!")
 async def cmd_end(message: types.Message):
     # убираем клавиатуру
