@@ -8,66 +8,59 @@ from aiogram import Bot, types, Dispatcher, executor
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 
-
-# коды смайликов, нужны для распечатки в сообщениях
-smile1='\U0001F4F0'
-smile2='\U0001F4E2'
-smile3='\U0001F4CC'
-smile4='\U0001F393'
-smile5='\U0001F6A9'
-smile6='\U0001F601'
-
 #Хэндлер, реагирующий на текстовое сообщение с текстом “/start”
-@dp.message_handler(commands=["start"])
+@dp.message_handler(commands=["start"], is_reply=False)
 async def cmd_start(message: types.Message):
     # создаем кнопки
     poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    poll_keyboard.add(types.KeyboardButton(text='Привет!'))
     poll_keyboard.add(types.KeyboardButton(text="Хочу заказать"))
     poll_keyboard.add(types.KeyboardButton(text="Сдаю настолку"))
-    poll_keyboard.add(types.KeyboardButton(text="Пока!"))
-    # отправляем вспомогательное сообщение
-    await message.reply('Выберите действие:', reply_markup=poll_keyboard)
+    poll_keyboard.add(types.KeyboardButton(text="Узнать подробнее о боте"))
+    poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
+    poll_keyboard.add(types.KeyboardButton(text="Попращаться"))
+    # выводим начальной сообщение
+    hello_sticker = random.choice(ut.hello_stickers)
+    start_msg = ut.create_start_msg(message.from_user.first_name)
+    await message.answer_sticker(hello_sticker)
+    await message.reply(start_msg, reply_markup=poll_keyboard)
 
-#Хэндлер на текстовое сообщение с текстом “Привет!”
-@dp.message_handler(lambda message: message.text == "Привет!")
-async def action_cancel(message: types.Message):
-    # выбираем случайный стикер(из нашего множества) для приветствия
-    el = random.choice(ut.stikers_id1)
-    # узнаем имя пользователя
-    name = message.from_user.first_name
-    # отправляем стикер
-    await message.answer_sticker(el)
-    # отправляем сообщение
-    await message.reply(f"Привет, {name}! Я твой личный мобильный помощник, буду помогать тебе во время обучения в ГУАП!\n\n"
-                        "Что я умею?\n\n"
-                        f"   1)Покажу все мероприятия, которые сейчас проходят в вузе или будут проводиться. {smile4}\n\n"
-                        f"   2)Расскажу обо всех важных объявлениях, чтобы ты оставался в курсе последних событий. {smile5}\n\n"
-                        f"   3)Напомню расписание твоей группы, а то вдруг ты его забыл). {smile6}")
-
-#Хэндлер на текстовое сообщение с текстом “Мероприятия”
+#Хэндлер на текстовое сообщение с текстом “Хочу заказат”
 @dp.message_handler(lambda message: message.text == "Хочу заказать")
 async def action_cancel(message: types.Message):
     await message.reply("Хочу заказать")
 
-#Хэндлер на текстовое сообщение с текстом “Объявления”
+#Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
 @dp.message_handler(lambda message: message.text == "Сдаю настолку")
+async def action_cancel(message: types.Message):
+    await message.reply("Сдаю настолку")
+
+#Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
+@dp.message_handler(lambda message: message.text == "Узнать подробнее о боте")
+async def cmd_bot_info(message: types.Message):
+    # создаем кнопки
+    poll_keyboard = types.InlineKeyboardMarkup()
+    poll_keyboard.add(types.InlineKeyboardButton(text = f"{'🚴'} Доставка", callback_data='delivery'))
+    poll_keyboard.add(types.InlineKeyboardButton(text=f"{'💰'} Оплата", callback_data='payment'))
+    poll_keyboard.add(types.InlineKeyboardButton(text=f"{'❓'} FAQ", callback_data='faq'))
+    # выводим начальной сообщение
+    start_msg = ut.create_bot_info_msg()
+    await message.reply(start_msg, reply_markup=poll_keyboard)
+
+#Хэндлер на текстовое сообщение с текстом “Вернуться в главное меню”
+@dp.message_handler(lambda message: message.text == "Вернуться в главное меню")
 async def action_cancel(message: types.Message):
     await message.reply("Сдаю настолку")
 
 #Хэндлер на текстовое сообщение с текстом “Пока!”
 @dp.message_handler(lambda message: message.text == "Пока!")
-async def action_cancel(message: types.Message):
-    # берем случайных стикер для прощания
-    el = random.choice(ut.stikers_id2)
-    # узнаем имя пользователя
-    name = message.from_user.first_name
-    # отправляем сообщение
-    await message.reply(f"Всего хорошего, {name}! Заглядывай почаще!")
-    # отправляем стикер
-    await message.answer_sticker(el)
+async def cmd_end(message: types.Message):
     # убираем клавиатуру
     remove_keyboard = types.ReplyKeyboardRemove()
+    # выводим конечное сообщение
+    bye_sticker = random.choice(ut.bye_stickers)
+    end_msg = ut.create_end_msg(message.from_user.first_name)
+    await message.answer_sticker(bye_sticker)
+    await message.reply(end_msg)
     # выводи вспомогательное сообщение
     await message.answer("Введите /start, чтобы начать заново.", reply_markup=remove_keyboard)
 
