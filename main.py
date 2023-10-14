@@ -3,6 +3,7 @@ import random
 import utils as ut
 from configure import token
 from aiogram import Bot, types, Dispatcher, executor
+from aiogram.types.web_app_info import WebAppInfo
 
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
@@ -29,10 +30,16 @@ async def cmd_start(message: types.Message):
 async def action_cancel(message: types.Message):
     await message.reply("Хочу заказать")
 
-#Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
+
+# Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
 @dp.message_handler(lambda message: message.text == "Сдаю настолку")
 async def action_cancel(message: types.Message):
-    await message.reply("Сдаю настолку")
+    await message.answer(ut.rent_add_text)
+    rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    rent_keyboard.add(types.KeyboardButton(text='Открыть веб-страницу', web_app=WebAppInfo(
+        url="https://hack.alieksandrzviez.repl.co")))
+    # отправляем вспомогательное сообщение
+    await message.answer('Выберите действие:', reply_markup=rent_keyboard)
 
 #Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
 @dp.message_handler(lambda message: message.text == "Узнать подробнее о боте")
@@ -63,6 +70,7 @@ async def cmd_end(message: types.Message):
     await message.reply(end_msg)
     # выводи вспомогательное сообщение
     await message.answer("Введите /start, чтобы начать заново.", reply_markup=remove_keyboard)
+
 
 # условие проходит, если мы запускаем именно этот скрипт, а тк
 # это главный исполняющий файл, то условие всегда true
