@@ -4,7 +4,7 @@ from telebot import types
 import random
 from random import randrange
 
-bot = telebot.TeleBot('1944523146:AAFhU_IzsszktxNyN-Ogw2K9BJKBnnMfm1g')
+bot = telebot.TeleBot('6461412829:AAGsOw6pSkcERF1PVQu9sljrIiqTiP27D6E')
 
 first = ["Сегодня — идеальный день для новых начинаний.",
          "Оптимальный день для того, чтобы решиться на смелый поступок!",
