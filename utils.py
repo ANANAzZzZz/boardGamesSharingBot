@@ -109,7 +109,7 @@ def getDescGame(json):
                f'🕐 {json["Middle_game_time"]} мин\n' \
                f'👥 {json["Min_players"]}-{json["Max_players"]} игроков\n' \
                f'⚠ Возраст +{json["Age"]}\n' \
-               f'💡 {json["Category"]} сложность\n\n' \
+               f'💡 {json["Complexity"]} сложность\n\n' \
                f"📜 <a href='{json['Rools']}'>Ссылка на правила</a>\n" \
                f'💰 Цена: {json["Price_per_day"]}/рублей в день'
     else:
@@ -118,7 +118,7 @@ def getDescGame(json):
                f'🕐 {json["Middle_game_time"]} мин\n' \
                f'👥 {json["Min_players"]}-{json["Max_players"]} игроков\n' \
                f'⚠ Возраст +{json["Age"]}\n' \
-               f'💡 {json["Category"]} сложность\n\n' \
+               f'💡 {json["Complexity"]} сложность\n\n' \
                f'💰 Цена: {json["Price_per_day"]}/рублей в день'
 
 
