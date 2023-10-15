@@ -85,10 +85,10 @@ def create_before_check_order_details_msg():
 def create_check_order_details_msg(order_id, list_of_board_games,
                                    delivery_date, return_date , owner):
 
-    msg =   f"📦 '\033[0m' + Заказ #{order_id} \n" \
+    msg =   f"📦 \033[1mЗаказ #{order_id}\033[0m \n" \
             f'📆 С {delivery_date} по {return_date} \n' \
-            f'Статус: **в процессе **, \n\n' \
-            f"'\033[0m' + Состав \n" \
+            f'Статус: \033[1mв процессе\033[0m, \n\n' \
+            f" \033[1mСостав\033[0m \n" \
 
     for i in range(len(list_of_board_games)):
         msg += f'☑️ {list_of_board_games[i]} \n'

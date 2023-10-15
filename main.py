@@ -2,7 +2,7 @@
 import json
 import random
 
-from aiogram.types import ParseMode
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ParseMode
 import requests
@@ -85,6 +85,9 @@ async def cmd_start(message: types.Message):
 @dp.message_handler(lambda message: message.text == "Хочу заказать")
 async def cmd_player_board_game(message: types.Message):
     first_player_msg = ut.create_first_player_msg()
+    response = requests.get(
+        f"https://humorous-ringtail-abnormally.ngrok-free.app/createReneter?Name={message.from_user.full_name}")
+    print(response.status_code)
     buttons = set_player_keyboard_buttons()
     await message.reply(first_player_msg, reply_markup=buttons)
 
@@ -127,43 +130,33 @@ async def get_player_board_game_message(message: types.Message):
         board_game_info = board_game
         flag = board_game["artyom"]
         print(flag)
-        try:
-            kb = [
-                [
-                    types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
-                ],
-                [
-                    types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
-                    types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
-                ]
-            ]
-            rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-            await message.answer_photo(caption=ut.getDescGame(board_game),
-                                    photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
-                                    reply_markup=rent_keyboard)
-        except:
-            await ut.BoardGame.name.set()
-            await message.answer("Укажите дату доставки: ", reply_markup= await SimpleCalendar().start_calendar())
+
+        await message.answer("Укажите дату доставки: ", reply_markup= await SimpleCalendar().start_calendar())
     except:
-        try:
-            kb = [
-                [
-                    types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
-                ],
-                [
-                    types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
-                    types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
-                ]
+        print("second try")
+        response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGameInCirculation?ID_Owner={message.from_user.id}&ID_Boardgame={board_game['ID']}")
+        print(response.status_code)
+        kb = [
+            [
+                types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
+            ],
+            [
+                types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
+                types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
             ]
-            rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        ]
+        rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        if ut.is_url(board_game["Image"]):
             await message.answer_photo(caption=ut.getDescGame(board_game),
-                                    photo=urllib.parse.urlparse(board_game["img"]).geturl(), parse_mode=ParseMode.HTML,
-                                    reply_markup=rent_keyboard)
-        except:
-            await ut.BoardGame.name.set()
-            await message.answer(text='🔥ВАУ Редкая настолка!\n'
-                                    'Давай расскажем о ней миру\n\n'
-                                    '**1/6** Как она назвается?')
+                                photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
+                                reply_markup=types.ReplyKeyboardRemove())
+        else:
+            await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML,
+                                reply_markup=types.ReplyKeyboardRemove())
+        await ut.BoardGame.name.set()
+        await message.answer(text='🔥ВАУ Редкая настолка!\n'
+                                'Давай расскажем о ней миру\n\n'
+                                '**1/6** Как она назвается?')
 
 # simple calendar usage
 @dp.callback_query_handler(simple_cal_callback.filter())
@@ -200,7 +193,7 @@ async def check_order_details(callback_query: types.CallbackQuery):
                       "ID_Boardgame":board_game_info["ID_Boardgame"],"ID_Owner":board_game_info["ID_Owner"],
                       "ID_Renter":board_game_info["ID_Renter"]}
     
-    await bot.send_photo(callback_query.from_user.id, "https://m.media-amazon.com/images/I/813J0DBqCTL._AC_UF894,1000_QL80_.jpg",
+    await bot.send_photo(callback_query.from_user.id, board_game_info["Image"],
                         caption=ut.create_check_order_details_msg(board_game_info["ID"], [board_game_info["Status"]], 
                         time_msg[0], time_msg[2], callback_query.from_user.full_name),
                         reply_markup=types.ReplyKeyboardRemove())
@@ -237,8 +230,11 @@ async def cmd_get_random_board_game(message: types.Message):
 async def cmd_rent_board_game(message: types.Message):
     await message.answer(ut.rent_add_text)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/createOwner?Name={message.from_user.full_name}")
+    print(response.status_code)
     rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
         url="https://hack.alieksandrzviez.repl.co")))
+    rent_keyboard.add(types.KeyboardButton(text="Посмотреть текущие заявки"))
     rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
@@ -308,22 +304,38 @@ async def process_gender(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['price'] = message.text
 
-    kb = [
-        [
-            types.InlineKeyboardButton(text=f"{'↩'} Изменить", callback_data='zodiac'),
-            types.InlineKeyboardButton(text=f"❌ Отменить", callback_data='zodiac')
-        ],
-        [
-
-            types.InlineKeyboardButton(text=f"🚀 Опубликовать", callback_data='zodiac')
-        ]
-    ]
-    rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    await ut.BoardGame.next()
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("↩ Изменить", "❌ Отменить")
+    markup.add("🚀 Опубликовать")
 
     data = await state.get_data()
     await message.answer_photo(caption=ut.getDescGameFrom(data),
                                photo=urllib.parse.urlparse(data["image"]).geturl(), parse_mode=ParseMode.HTML,
-                               reply_markup=rent_keyboard)
+                               reply_markup=markup)
+
+
+
+@dp.message_handler(state=ut.BoardGame.end)
+async def insert_desc(message: types.Message, state: FSMContext):
+    # async with state.proxy() as data:
+    #     data['category'] = ut.emoji_pattern.sub(r'', message.text).strip()
+    if message.text == "🚀 Опубликовать":
+        data = await state.get_data()
+        response = requests.get(
+            f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGame?Name={data['name']}&Description={data['desc']}"
+            f"&Image={data['image']}&Category={data['filter']}&Complexity={data['category']}&Price_per_day={data['price']}"
+        )
+        print(response.status_code)
+
+    await ut.BoardGame.next()
+    rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
+        url="https://hack.alieksandrzviez.repl.co")))
+    rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
+    # отправляем вспомогательное сообщение
+    await message.answer('Выберите действие:', reply_markup=rent_keyboard)
+    # await message.answer("**6/6** И самое приятное...\nНазначь цену за сутки", reply_markup=types.ReplyKeyboardRemove())
 
     await state.finish()
 
