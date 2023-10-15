@@ -75,7 +75,6 @@ class SimpleClock:
         """
         return_data = (False, None)
         temp_date = time(hour = int(data['hour']), minute = int(data['minute']))
-        print(temp_date)
         # processing empty buttons, answering with no action
         if data['act'] == "IGNORE":
             await query.answer(cache_time=60)

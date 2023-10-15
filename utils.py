@@ -1,6 +1,9 @@
 # импортируем библиотеки
+import re
+
 import aiogram
 from aiogram.dispatcher.filters import Text
+from aiogram.dispatcher.filters.state import StatesGroup, State
 from yarl import URL
 
 # id стикеров для приветствия
@@ -25,7 +28,7 @@ def create_start_msg(user_name):
           f'2)"Сдать настолку" - перейти в режим владельца. {"📦"}\n\n' \
           f'3)"Узнать подробнее о боте" - вывести поробную информацию о боте. {"🧐"} \n\n' \
           f'4)"Вернуться в главное меню" - выйти из текущего режима в главное меню. {"🔙"} \n\n' \
-          f'5)"Попращаться" - попращаться с ботом. {"👋"}'
+          f'5)"Попрощаться" - попращаться с ботом. {"👋"}'
     return msg
 
 
@@ -67,6 +70,26 @@ def create_random_board_game_msg():
             f'Не знаешь, что выбрать? Брось кубик и положись на удачу 🎲 \n\n' 
     return msg
 
+def create_before_check_order_details_msg():
+    msg =   f'🏁 Отлично! \n\n' \
+            f'Мы почти закончили, осталось только внимательно проверить детали заказа.' 
+    return msg
+
+def create_check_order_details_msg(order_id, list_of_board_games, 
+                                   delivery_date, return_date , owner):
+    
+    msg =   f'📦 **Заказ #{order_id}** \n' \
+            f'📆 С {delivery_date} по {return_date} \n' \
+            f'Статус: **в процессе **, \n\n' \
+            f'**Состав** \n' \
+        
+    for i in range(len(list_of_board_games)):
+        msg += f'☑️ {list_of_board_games[i]} \n'
+
+
+    msg += f'🦄 Владелец {owner}'
+    return msg
+
 rent_add_text = "О, Настолочный Владыка!\n" \
                 "Пришла пора стереть пыль с коробок 🌚\n\n" \
                 "Добавьте свою первую настолку в профиль и назначьте цену 💰"
@@ -81,3 +104,37 @@ def getDescGame(json):
            f'💡 {json["category"]} сложность\n\n' \
            f"📜 <a href='{json['rools']}'>Ссылка на правила</a>\n" \
            f'💰 Цена: {json["price_day"]}/рублей в день'
+
+def getDescGameFromClass(json):
+    return f'📦Название: {json["name"]} {json["rating"]}⭐\n\n' \
+           f'Краткое описание: \n {json["desc"]}\n\n' \
+           f'🕐 {json["timeGame"]} мин\n' \
+           f'👥 {json["minCountPlayers"]}-{json["maxCountPlayers"]} игроков\n' \
+           f'⚠ Возраст +{json["age"]}\n' \
+           f'💡 {json["category"]} сложность\n\n' \
+           f"📜 <a href='{json['rules']}'>Ссылка на правила</a>\n" \
+           f'💰 Цена: {json["price"]}/рублей в день'
+
+
+
+class BoardGame(StatesGroup):
+    name = State()
+    desc = State()
+    image = State()
+    filter = State()
+    category = State()
+    price = State()
+
+def getDescGameFrom(boardGame):
+    return f'📦Название: {boardGame["name"]}\n\n' \
+           f'Краткое описание: \n {boardGame["desc"]}\n\n' \
+           f'💡 {boardGame["category"]} сложность\n\n' \
+           f'💰 Цена: {boardGame["price"]}/рублей в день'
+
+
+emoji_pattern = re.compile("["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           "]+", flags=re.UNICODE)
