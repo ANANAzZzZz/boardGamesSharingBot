@@ -2,8 +2,10 @@
 import json
 import random
 
+import requests
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import state
 from aiogram.types import ParseMode
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ParseMode
@@ -18,10 +20,9 @@ from aiogram_calendar import simple_cal_callback
 from python_calendar import SimpleCalendar
 from python_clock import SimpleClock, clock_callback
 
-
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
 time_msg = []
 order_details = {}
@@ -37,6 +38,7 @@ def set_main_keyboard_buttons():
     poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     poll_keyboard.add(types.KeyboardButton(text="Попрощаться"))
     return poll_keyboard
+
 
 def set_player_keyboard_buttons():
     # создаем кнопки
@@ -67,7 +69,7 @@ def set_board_games_buttons():
 
 #############################################
 
-#Хэндлер, реагирующий на текстовое сообщение с текстом “/start”
+# Хэндлер, реагирующий на текстовое сообщение с текстом “/start”
 @dp.message_handler(commands=["start"], is_reply=False)
 async def cmd_start(message: types.Message):
     # выводим начальной сообщение
@@ -77,40 +79,50 @@ async def cmd_start(message: types.Message):
     await message.answer_sticker(hello_sticker)
     await message.reply(start_msg, reply_markup=buttons)
 
+
 #############################################
 
-#Хэндлер на текстовое сообщение с текстом “Хочу заказать”
+# Хэндлер на текстовое сообщение с текстом “Хочу заказать”
 @dp.message_handler(lambda message: message.text == "Хочу заказать")
 async def cmd_player_board_game(message: types.Message):
     first_player_msg = ut.create_first_player_msg()
+    response = requests.get(
+        f"https://humorous-ringtail-abnormally.ngrok-free.app/createRenter?Name={message.from_user.full_name}"
+    )
+    print(response.status_code)
     buttons = set_player_keyboard_buttons()
     await message.reply(first_player_msg, reply_markup=buttons)
 
-#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+
+# Хэндлер на текстовое сообщение с текстом “Кооперативные”
 @dp.message_handler(lambda message: message.text == f"{'👨‍👩‍👧'} Семейные")
 async def cmd_choose_party_board_game(message: types.Message):
     buttons = set_board_games_buttons()
     await message.answer("Открыть список настолок: ", reply_markup = buttons)
 
-#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+
+# Хэндлер на текстовое сообщение с текстом “Кооперативные”
 @dp.message_handler(lambda message: message.text == f"{'🎯'} Стратегии")
 async def cmd_choose_party_board_game(message: types.Message):
     buttons = set_board_games_buttons()
     await message.answer("Открыть список настолок: ", reply_markup = buttons)
 
-#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+
+# Хэндлер на текстовое сообщение с текстом “Кооперативные”
 @dp.message_handler(lambda message: message.text == f"{'🧬'} Логические")
 async def cmd_choose_party_board_game(message: types.Message):
     buttons = set_board_games_buttons()
     await message.answer("Открыть список настолок: ", reply_markup = buttons)
 
-#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+
+# Хэндлер на текстовое сообщение с текстом “Кооперативные”
 @dp.message_handler(lambda message: message.text == f"{'🎉'} Вечериночные")
 async def cmd_choose_party_board_game(message: types.Message):
     buttons = set_board_games_buttons()
     await message.answer("Открыть список настолок: ", reply_markup = buttons)
 
-#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+
+# Хэндлер на текстовое сообщение с текстом “Кооперативные”
 @dp.message_handler(lambda message: message.text == f"{'🥂'} Кооперативные")
 async def cmd_choose_cooperative_board_game(message: types.Message):
     buttons = set_board_games_buttons()
@@ -119,7 +131,7 @@ async def cmd_choose_cooperative_board_game(message: types.Message):
 @dp.message_handler(content_types=['web_app_data'])
 async def get_player_board_game_message(message: types.Message):
     board_game = json.loads(message.web_app_data.data)
-    
+
     try:
         field = board_game["artyom"]
         try:
@@ -160,6 +172,7 @@ async def get_player_board_game_message(message: types.Message):
                                     'Давай расскажем о ней миру\n\n'
                                     '**1/12** Как она назвается?')
 
+
 # simple calendar usage
 @dp.callback_query_handler(simple_cal_callback.filter())
 async def process_simple_calendar(callback_query: types.CallbackQuery, callback_data: dict):
@@ -167,7 +180,7 @@ async def process_simple_calendar(callback_query: types.CallbackQuery, callback_
     if selected:
         time_msg.append(f'{date.strftime("%d/%m/%Y")}')
         await callback_query.message.answer("Укажите время: ", reply_markup=await SimpleClock().start_clock())
-        
+
 # simple clock usage
 @dp.callback_query_handler(clock_callback.filter())
 async def process_simple_clock(callback_query: types.CallbackQuery, callback_data: dict):
@@ -189,13 +202,14 @@ async def check_order_details(callback_query: types.CallbackQuery):
     #print(callback_query)
     #board_games = requests.
     await bot.send_photo(callback_query.from_user.id, "https://m.media-amazon.com/images/I/813J0DBqCTL._AC_UF894,1000_QL80_.jpg",
-                        caption=ut.create_check_order_details_msg(1, ["cards"], 
+                        caption=ut.create_check_order_details_msg(1, ["cards"],
                         time_msg[0], time_msg[2], callback_query.from_user.full_name),
                         reply_markup=types.ReplyKeyboardRemove())
-    
+
     await callback_query.message.reply(ut.create_start_msg(callback_query.from_user.first_name), reply_markup=set_main_keyboard_buttons())
 
-#Хэндлер на текстовое сообщение с текстом “Не могу определиться”
+
+# Хэндлер на текстовое сообщение с текстом “Не могу определиться”
 @dp.message_handler(lambda message: message.text == f"{'❓'} Не могу определиться")
 async def cmd_get_random_board_game(message: types.Message):
     random_board_game_msg = ut.create_random_board_game_msg()
@@ -203,18 +217,56 @@ async def cmd_get_random_board_game(message: types.Message):
     poll_keyboard.add(types.KeyboardButton(text="{'🔮'} Рандомная игра"))
     await message.reply(random_board_game_msg, reply_markup=poll_keyboard)
 
+
 #############################################
 
 # Хэндлер на текстовое сообщение с текстом “Сдаю настолку”
 @dp.message_handler(lambda message: message.text == "Сдаю настолку")
 async def cmd_rent_board_game(message: types.Message):
     await message.answer(ut.rent_add_text)
+    response = requests.get(
+        f"https://humorous-ringtail-abnormally.ngrok-free.app/createOwner?Name={message.from_user.full_name}"
+    )
+    print(response.status_code)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
         url="https://hack.alieksandrzviez.repl.co")))
     rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
+
+
+@dp.message_handler(lambda message: message.text == f"Посмотреть текущие заявки")
+async def cmd_get_random_board_game(message: types.Message):
+    random_board_game_msg = ut.create_random_board_game_msg()
+    poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    poll_keyboard.add(types.KeyboardButton(text="{'🔮'} Рандомная игра"))
+    await message.reply(random_board_game_msg, reply_markup=poll_keyboard)
+
+
+@dp.message_handler(content_types=['web_app_data'])
+async def get_board_game_message(message: types.Message):
+    board_game = json.loads(message.web_app_data.data)
+    try:
+        kb = [
+            [
+                types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
+            ],
+            [
+                types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
+                types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
+            ]
+        ]
+        rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+        await message.answer_photo(caption=ut.getDescGame(board_game),
+                                   photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
+                                   reply_markup=rent_keyboard)
+    except:
+        await ut.BoardGame.name.set()
+        await message.answer(text='🔥ВАУ Редкая настолка!\n'
+                                  'Давай расскажем о ней миру\n\n'
+                                  '**1/6** Как она назвается?', reply_markup=types.ReplyKeyboardRemove())
+
 
 # 1/6 set name
 @dp.message_handler(state=ut.BoardGame.name)
@@ -281,28 +333,55 @@ async def process_gender(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['price'] = message.text
 
-    kb = [
-        [
-            types.InlineKeyboardButton(text=f"{'↩'} Изменить", callback_data='zodiac'),
-            types.InlineKeyboardButton(text=f"❌ Отменить", callback_data='zodiac')
-        ],
-        [
-
-            types.InlineKeyboardButton(text=f"🚀 Опубликовать", callback_data='zodiac')
-        ]
-    ]
-    rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    # kb = [
+    #     [
+    #         types.InlineKeyboardButton(text=f"{'↩'} Изменить", callback_data='zodiac'),
+    #         types.InlineKeyboardButton(text=f"❌ Отменить", callback_data='zodiac')
+    #     ],
+    #     [
+    #         types.InlineKeyboardButton(text=f"🚀 Опубликовать", callback_data='publicate')
+    #     ]
+    # ]
+    # rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+    await ut.BoardGame.next()
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("↩ Изменить", "❌ Отменить")
+    markup.add("🚀 Опубликовать")
 
     data = await state.get_data()
     await message.answer_photo(caption=ut.getDescGameFrom(data),
                                photo=urllib.parse.urlparse(data["image"]).geturl(), parse_mode=ParseMode.HTML,
-                               reply_markup=rent_keyboard)
+                               reply_markup=markup)
 
-    await state.finish()
+    # await state.finish()
+
+
+@dp.message_handler(state=ut.BoardGame.end)
+async def insert_desc(message: types.Message, state: FSMContext):
+    # async with state.proxy() as data:
+    #     data['category'] = ut.emoji_pattern.sub(r'', message.text).strip()
+    if message.text == "🚀 Опубликовать":
+        data = await state.get_data()
+        response = requests.get(
+            f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGame?Name={data['name']}&Description={data['desc']}"
+            f"&Image={data['image']}&Category={data['filter']}&Complexity={data['category']}&Price_per_day={data['price']}"
+        )
+        print(response.status_code)
+    await ut.BoardGame.next()
+    # await message.answer("**6/6** И самое приятное...\nНазначь цену за сутки", reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.callback_query_handler(lambda c: c.data == 'zodiac')
+async def process_publicate_button(callback_query: types.CallbackQuery):
+    print('process_publicate_button')
+    # await bot.answer_callback_query(callback_query.id)
+    # await bot.send_message(callback_query.from_user.id, ut.create_delivery_msg())
+
 
 #############################################
 
 #Хэндлер на текстовое сообщение с текстом “Узнать подробнее о боте”
+# Хэндлер на текстовое сообщение с текстом “Узнать подробнее о боте”
 @dp.message_handler(lambda message: message.text == "Узнать подробнее о боте")
 async def cmd_bot_info(message: types.Message):
     # создаем кнопки
@@ -314,31 +393,36 @@ async def cmd_bot_info(message: types.Message):
     start_msg = ut.create_bot_info_msg()
     await message.reply(start_msg, reply_markup=poll_keyboard)
 
-#Хэндлер на нажатие кнопки “Доставка”
+
+# Хэндлер на нажатие кнопки “Доставка”
 @dp.callback_query_handler(lambda c: c.data == 'delivery')
 async def process_delivery_button(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_message(callback_query.from_user.id, ut.create_delivery_msg())
 
-#Хэндлер на нажатие кнопки “Доставка”
+
+# Хэндлер на нажатие кнопки “Доставка”
 @dp.callback_query_handler(lambda c: c.data == 'payment')
 async def process_payment_button(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_message(callback_query.from_user.id, ut.create_payment_msg())
 
-#Хэндлер на нажатие кнопки “Доставка”
+
+# Хэндлер на нажатие кнопки “Доставка”
 @dp.callback_query_handler(lambda c: c.data == 'faq')
 async def process_faq_button(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     await bot.send_message(callback_query.from_user.id, ut.create_faq_msg())
 
+
 #############################################
 
-#Хэндлер на текстовое сообщение с текстом “Вернуться в главное меню”
+# Хэндлер на текстовое сообщение с текстом “Вернуться в главное меню”
 @dp.message_handler(lambda message: message.text == "Вернуться в главное меню")
 async def cmd_return_main_menu(message: types.Message):
     buttons = set_main_keyboard_buttons()
     await message.reply(ut.create_start_msg(message.from_user.first_name), reply_markup=buttons)
+
 
 #############################################
 
@@ -360,7 +444,6 @@ async def cmd_end(message: types.Message):
 # условие проходит, если мы запускаем именно этот скрипт, а тк
 # это главный исполняющий файл, то условие всегда true
 if __name__ == '__main__':
-
-    dp.register_callback_query_handler(process_simple_clock,simple_cal_callback.filter())
+    dp.register_callback_query_handler(process_simple_clock, simple_cal_callback.filter())
     # активируем бота
     executor.start_polling(dp)

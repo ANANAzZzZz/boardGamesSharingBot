@@ -124,6 +124,7 @@ class BoardGame(StatesGroup):
     filter = State()
     category = State()
     price = State()
+    end = State()
 
 def getDescGameFrom(boardGame):
     return f'📦Название: {boardGame["name"]}\n\n' \
