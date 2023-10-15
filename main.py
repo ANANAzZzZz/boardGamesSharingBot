@@ -128,22 +128,32 @@ async def get_player_board_game_message(message: types.Message):
     try:
         global board_game_info
         board_game_info = board_game
-        flag = board_game["artyom"]
-        print(flag)
-
-        await message.answer("Укажите дату доставки: ", reply_markup= await SimpleCalendar().start_calendar())
+        field = board_game["artyom"]
+        print("first try")
+        try:
+            kb = [
+                [
+                    types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac1')
+                ],
+            ]
+            rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
+            if ut.is_url(board_game["Image"]):
+                await message.answer_photo(caption=ut.getDescGame(board_game),
+                                    photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
+                                    reply_markup=rent_keyboard)
+            else:
+                await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML,
+                                    reply_markup=await SimpleCalendar().start_calendar())
+        except:
+            await ut.BoardGame.name.set()
     except:
         print("second try")
         response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGameInCirculation?ID_Owner={message.from_user.id}&ID_Boardgame={board_game['ID']}")
         print(response.status_code)
         kb = [
             [
-                types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
+                types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac2')
             ],
-            [
-                types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
-                types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
-            ]
         ]
         rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
         if ut.is_url(board_game["Image"]):
@@ -157,6 +167,10 @@ async def get_player_board_game_message(message: types.Message):
         await message.answer(text='🔥ВАУ Редкая настолка!\n'
                                 'Давай расскажем о ней миру\n\n'
                                 '**1/6** Как она назвается?')
+
+@dp.callback_query_handler(lambda c: c.data == 'zodiac1')
+async def check_order_details(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Укажите дату доставки: ", reply_markup=await SimpleCalendar().start_calendar())
 
 # simple calendar usage
 @dp.callback_query_handler(simple_cal_callback.filter())
@@ -186,8 +200,6 @@ async def process_simple_clock(callback_query: types.CallbackQuery, callback_dat
 @dp.callback_query_handler(lambda c: c.data == 'place_order')
 async def check_order_details(callback_query: types.CallbackQuery):
     global time_msg, board_game_info
-
-    print(board_game_info)
 
     board_game_msg = {"delivery_date": time_msg[0], "return_date": time_msg[2],
                       "ID_Boardgame":board_game_info["ID_Boardgame"],"ID_Owner":board_game_info["ID_Owner"],
@@ -246,8 +258,7 @@ async def cmd_rent_board_game(message: types.Message):
 @dp.message_handler(lambda message: message.text == "Посмотреть последнюю заявку")
 async def cmd_choose_cooperative_board_game(message: types.Message):
     response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/filterOrders?ID={message.from_user.id}")
-
-    await message.answer('Выберите действие:', reply_markup=rent_keyboard)
+    #await message.answer('Выберите действие:', reply_markup=rent_keyboard)
 
 
 #Хэндлер на текстовое сообщение с текстом “Кооперативные”
