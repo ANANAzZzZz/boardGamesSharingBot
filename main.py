@@ -86,7 +86,7 @@ async def cmd_start(message: types.Message):
 async def cmd_player_board_game(message: types.Message):
     first_player_msg = ut.create_first_player_msg()
     response = requests.get(
-        f"https://humorous-ringtail-abnormally.ngrok-free.app/createReneter?Name={message.from_user.full_name}")
+        f"https://humorous-ringtail-abnormally.ngrok-free.app/createRenter?Name={message.from_user.full_name}&ID={message.from_user.id}")
     print(response.status_code)
     buttons = set_player_keyboard_buttons()
     await message.reply(first_player_msg, reply_markup=buttons)
@@ -230,14 +230,33 @@ async def cmd_get_random_board_game(message: types.Message):
 async def cmd_rent_board_game(message: types.Message):
     await message.answer(ut.rent_add_text)
     rent_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/createOwner?Name={message.from_user.full_name}")
+    response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/createOwner"
+                            f"?Name={message.from_user.full_name}&ID={message.from_user.id}")
     print(response.status_code)
     rent_keyboard.add(types.KeyboardButton(text='Добавить настолку', web_app=WebAppInfo(
         url="https://hack.alieksandrzviez.repl.co")))
-    rent_keyboard.add(types.KeyboardButton(text="Посмотреть текущие заявки"))
+    rent_keyboard.add(types.KeyboardButton(text="Добавить новую настолку"))
+    rent_keyboard.add(types.KeyboardButton(text="Посмотреть последнюю заявку"))
     rent_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     # отправляем вспомогательное сообщение
     await message.answer('Выберите действие:', reply_markup=rent_keyboard)
+
+
+#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+@dp.message_handler(lambda message: message.text == "Посмотреть последнюю заявку")
+async def cmd_choose_cooperative_board_game(message: types.Message):
+    response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/filterOrders?ID={message.from_user.id}")
+
+    await message.answer('Выберите действие:', reply_markup=rent_keyboard)
+
+
+#Хэндлер на текстовое сообщение с текстом “Кооперативные”
+@dp.message_handler(lambda message: message.text == "Добавить новую настолку")
+async def cmd_choose_cooperative_board_game(message: types.Message):
+    await ut.BoardGame.name.set()
+    await message.answer(text='🔥ВАУ Редкая настолка!\n'
+                              'Давай расскажем о ней миру\n\n'
+                              '**1/6** Как она назвается?')
 
 # 1/6 set name
 @dp.message_handler(state=ut.BoardGame.name)
