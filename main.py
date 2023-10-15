@@ -2,6 +2,8 @@
 import json
 import random
 
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
 from aiogram.types import ParseMode
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ParseMode
@@ -12,7 +14,7 @@ import utils as ut
 from configure import token
 from aiogram import Bot, types, Dispatcher, executor
 from aiogram.types.web_app_info import WebAppInfo
-from aiogram_calendar import simple_cal_callback 
+from aiogram_calendar import simple_cal_callback
 from python_calendar import SimpleCalendar
 from python_clock import SimpleClock, clock_callback
 
@@ -40,11 +42,11 @@ def set_player_keyboard_buttons():
     # создаем кнопки
     kb = [
         [
-            types.KeyboardButton(text=f"{'👨‍👩‍👧'} Семейные"), 
+            types.KeyboardButton(text=f"{'👨‍👩‍👧'} Семейные"),
             types.KeyboardButton(text=f"{'🎯'} Стратегии")
         ],
         [
-            types.KeyboardButton(text=f"{'🧬'} Логические"), 
+            types.KeyboardButton(text=f"{'🧬'} Логические"),
             types.KeyboardButton(text=f"{'🎉'} Вечериночные")
         ],
         [
