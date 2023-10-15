@@ -2,6 +2,7 @@
 import json
 import random
 
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ParseMode
 import requests
@@ -18,7 +19,7 @@ from python_clock import SimpleClock, clock_callback
 
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
 time_msg = []
 order_details = {}
@@ -32,7 +33,6 @@ def set_main_keyboard_buttons():
     poll_keyboard.add(types.KeyboardButton(text="Сдаю настолку"))
     poll_keyboard.add(types.KeyboardButton(text="Узнать подробнее о боте"))
     poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
-    poll_keyboard.add(types.KeyboardButton(text="Попрощаться"))
     return poll_keyboard
 
 def set_player_keyboard_buttons():
@@ -122,6 +122,7 @@ async def get_player_board_game_message(message: types.Message):
     
     try:
         field = board_game["artyom"]
+        print("first try")
         try:
             kb = [
                 [
@@ -133,14 +134,21 @@ async def get_player_board_game_message(message: types.Message):
                 ]
             ]
             rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-            await message.answer_photo(caption=ut.getDescGame(board_game),
+            if ut.is_url(board_game["Image"]):
+                await message.answer_photo(caption=ut.getDescGame(board_game),
                                     photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
+                                    reply_markup=rent_keyboard)
+            else:
+                await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML,
                                     reply_markup=rent_keyboard)
         except:
             await ut.BoardGame.name.set()
             await message.answer("Укажите дату доставки: ", reply_markup=await SimpleCalendar().start_calendar())
     except:
         try:
+            print("second try")
+            response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGameInCirculation?ID_Owner={message.from_user.id}&ID_Boardgame={board_game['ID']}")
+            print(response.status_code)
             kb = [
                 [
                     types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
@@ -151,14 +159,18 @@ async def get_player_board_game_message(message: types.Message):
                 ]
             ]
             rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-            await message.answer_photo(caption=ut.getDescGame(board_game),
-                                    photo=urllib.parse.urlparse(board_game["img"]).geturl(), parse_mode=ParseMode.HTML,
-                                    reply_markup=rent_keyboard)
+            if ut.is_url(board_game["Image"]):
+                await message.answer_photo(caption=ut.getDescGame(board_game),
+                                    photo=urllib.parse.urlparse(board_game["Image"]).geturl(), parse_mode=ParseMode.HTML,
+                                    reply_markup=types.ReplyKeyboardRemove())
+            else:
+                await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML,
+                                    reply_markup=types.ReplyKeyboardRemove())
         except:
             await ut.BoardGame.name.set()
             await message.answer(text='🔥ВАУ Редкая настолка!\n'
                                     'Давай расскажем о ней миру\n\n'
-                                    '**1/12** Как она назвается?')
+                                    '**1/6** Как она назвается?')
 
 # simple calendar usage
 @dp.callback_query_handler(simple_cal_callback.filter())
