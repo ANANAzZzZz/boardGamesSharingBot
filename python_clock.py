@@ -60,7 +60,7 @@ class SimpleClock:
 
         # Second row - set time
         inline_kb.row()
-        inline_kb.insert(InlineKeyboardButton(" ✔️ ", callback_data=clock_callback.new("CONTINUE", hour, minute)))
+        inline_kb.insert(InlineKeyboardButton(" ✅ ", callback_data=clock_callback.new("CONTINUE", hour, minute)))
 
         return inline_kb
 

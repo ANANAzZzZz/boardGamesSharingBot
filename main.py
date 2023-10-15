@@ -13,17 +13,18 @@ from configure import token
 from aiogram import Bot, types, Dispatcher, executor
 from aiogram.types.web_app_info import WebAppInfo
 from aiogram_calendar import simple_cal_callback 
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from python_calendar import SimpleCalendar
 from python_clock import SimpleClock, clock_callback
 
 
 # создаем бота и передаем его диспетчеру(он будет работать с тг)
 bot = Bot(token=token)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
 time_msg = []
+board_game_info = None
 order_details = {}
-
 delivary_date = 0
 
 def set_main_keyboard_buttons():
@@ -32,8 +33,6 @@ def set_main_keyboard_buttons():
     poll_keyboard.add(types.KeyboardButton(text="Хочу заказать"))
     poll_keyboard.add(types.KeyboardButton(text="Сдаю настолку"))
     poll_keyboard.add(types.KeyboardButton(text="Узнать подробнее о боте"))
-    poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
-    poll_keyboard.add(types.KeyboardButton(text="Попрощаться"))
     return poll_keyboard
 
 def set_player_keyboard_buttons():
@@ -62,6 +61,11 @@ def set_board_games_buttons():
         url="https://hack1.alieksandrzviez.repl.co/")))
     board_games_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     return board_games_keyboard
+
+def check_order_board_game_status(game_status):
+    if isinstance(game_status, int):
+        return "Завершен" if not game_status else "В процессе"
+    return game_status
 
 #############################################
 
@@ -119,7 +123,10 @@ async def get_player_board_game_message(message: types.Message):
     board_game = json.loads(message.web_app_data.data)
     
     try:
-        field = board_game["artyom"]
+        global board_game_info
+        board_game_info = board_game
+        flag = board_game["artyom"]
+        print(flag)
         try:
             kb = [
                 [
@@ -136,7 +143,7 @@ async def get_player_board_game_message(message: types.Message):
                                     reply_markup=rent_keyboard)
         except:
             await ut.BoardGame.name.set()
-            await message.answer("Укажите дату доставки: ", reply_markup=await SimpleCalendar().start_calendar())
+            await message.answer("Укажите дату доставки: ", reply_markup= await SimpleCalendar().start_calendar())
     except:
         try:
             kb = [
@@ -156,13 +163,14 @@ async def get_player_board_game_message(message: types.Message):
             await ut.BoardGame.name.set()
             await message.answer(text='🔥ВАУ Редкая настолка!\n'
                                     'Давай расскажем о ней миру\n\n'
-                                    '**1/12** Как она назвается?')
+                                    '**1/6** Как она назвается?')
 
 # simple calendar usage
 @dp.callback_query_handler(simple_cal_callback.filter())
 async def process_simple_calendar(callback_query: types.CallbackQuery, callback_data: dict):
     selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
     if selected:
+        await callback_query.message.answer(f'Дата: {date.strftime("%d/%m/%Y")}')
         time_msg.append(f'{date.strftime("%d/%m/%Y")}')
         await callback_query.message.answer("Укажите время: ", reply_markup=await SimpleClock().start_clock())
         
@@ -172,6 +180,7 @@ async def process_simple_clock(callback_query: types.CallbackQuery, callback_dat
     global delivary_date
     selected, date = await SimpleClock().process_selection(callback_query, callback_data)
     if selected:
+        await callback_query.message.answer(f'Время: {date.strftime("%H:%M")}')
         time_msg.append(f'{date.strftime("%H:%M")}')
         delivary_date +=1
         if delivary_date > 1:
@@ -183,23 +192,43 @@ async def process_simple_clock(callback_query: types.CallbackQuery, callback_dat
 
 @dp.callback_query_handler(lambda c: c.data == 'place_order')
 async def check_order_details(callback_query: types.CallbackQuery):
-    global time_msg
-    #print(callback_query)
-    #board_games = requests.
+    global time_msg, board_game_info
+
+    print(board_game_info)
+
+    board_game_msg = {"delivery_date": time_msg[0], "return_date": time_msg[2],
+                      "ID_Boardgame":board_game_info["ID_Boardgame"],"ID_Owner":board_game_info["ID_Owner"],
+                      "ID_Renter":board_game_info["ID_Renter"]}
+    
     await bot.send_photo(callback_query.from_user.id, "https://m.media-amazon.com/images/I/813J0DBqCTL._AC_UF894,1000_QL80_.jpg",
-                        caption=ut.create_check_order_details_msg(1, ["cards"], 
+                        caption=ut.create_check_order_details_msg(board_game_info["ID"], [board_game_info["Status"]], 
                         time_msg[0], time_msg[2], callback_query.from_user.full_name),
                         reply_markup=types.ReplyKeyboardRemove())
+    
+    response = requests.get(
+                f"https://humorous-ringtail-abnormally.ngrok-free.app/addOrder?Order_time={board_game_msg['delivery_date']}"
+                f"&ID_renter={board_game_msg['ID_Renter']}&ID_boardgame={board_game_msg['ID_Boardgame']}&ID_owner={board_game_msg['ID_Owner']}"
+            )
+    
+    print(response.status_code)
     
     await callback_query.message.reply(ut.create_start_msg(callback_query.from_user.first_name), reply_markup=set_main_keyboard_buttons())
 
 #Хэндлер на текстовое сообщение с текстом “Не могу определиться”
 @dp.message_handler(lambda message: message.text == f"{'❓'} Не могу определиться")
-async def cmd_get_random_board_game(message: types.Message):
+async def cmd_unknown_board_game(message: types.Message):
     random_board_game_msg = ut.create_random_board_game_msg()
     poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    poll_keyboard.add(types.KeyboardButton(text="{'🔮'} Рандомная игра"))
+    poll_keyboard.add(types.KeyboardButton(text=f"{'🔮'} Рандомная игра"))
+    poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
     await message.reply(random_board_game_msg, reply_markup=poll_keyboard)
+
+#Хэндлер на текстовое сообщение с текстом “{'🔮'} Рандомная игра"”
+@dp.message_handler(lambda message: message.text == f"{'🔮'} Рандомная игра")
+async def cmd_get_random_board_game(message: types.Message):
+    poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    poll_keyboard.add(types.KeyboardButton(text="Вернуться в главное меню"))
+    await message.reply("Скоро появится...", reply_markup=poll_keyboard)
 
 #############################################
 
@@ -337,22 +366,6 @@ async def process_faq_button(callback_query: types.CallbackQuery):
 async def cmd_return_main_menu(message: types.Message):
     buttons = set_main_keyboard_buttons()
     await message.reply(ut.create_start_msg(message.from_user.first_name), reply_markup=buttons)
-
-#############################################
-
-
-# Хэндлер на текстовое сообщение с текстом “Пока!”
-@dp.message_handler(lambda message: message.text == "Попрощаться")
-async def cmd_end(message: types.Message):
-    # убираем клавиатуру
-    remove_keyboard = types.ReplyKeyboardRemove()
-    # выводим конечное сообщение
-    bye_sticker = random.choice(ut.bye_stickers)
-    end_msg = ut.create_end_msg(message.from_user.first_name)
-    await message.answer_sticker(bye_sticker)
-    await message.reply(end_msg)
-    # выводи вспомогательное сообщение
-    await message.answer("Введите /start, чтобы начать заново.", reply_markup=remove_keyboard)
 
 
 # условие проходит, если мы запускаем именно этот скрипт, а тк
