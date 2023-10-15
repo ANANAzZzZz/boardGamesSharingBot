@@ -29,6 +29,8 @@ order_details = {}
 
 delivary_date = 0
 
+global_board_game = {}
+
 
 def set_main_keyboard_buttons():
     # создаем кнопки
@@ -214,32 +216,19 @@ async def get_player_board_game_message(message: types.Message):
     board_game = json.loads(message.web_app_data.data)
 
     try:
+        print("first try")
         field = board_game["artyom"]
-        try:
-            kb = [
-                [
-                    types.InlineKeyboardButton(text=f"{'💎'} Арендовать", callback_data='zodiac')
-                ],
-                [
-                    types.InlineKeyboardButton(text=f"⏪‍", callback_data='zodiac'),
-                    types.InlineKeyboardButton(text=f"⏩", callback_data='zodiac')
-                ]
-            ]
-            rent_keyboard = types.InlineKeyboardMarkup(inline_keyboard=kb)
-            if ut.is_url(board_game["Image"]):
-                await message.answer_photo(caption=ut.getDescGame(board_game),
-                                           photo=urllib.parse.urlparse(board_game["Image"]).geturl(),
-                                           parse_mode=ParseMode.HTML,
-                                           reply_markup=rent_keyboard)
-            else:
-                await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML,
-                                     reply_markup=rent_keyboard)
-        except:
-            await ut.BoardGame.name.set()
-            await message.answer("Укажите дату доставки: ", reply_markup=await SimpleCalendar().start_calendar())
+        if ut.is_url(board_game["Image"]):
+            await message.answer_photo(caption=ut.getDescGame(board_game),
+                                       photo=urllib.parse.urlparse(board_game["Image"]).geturl(),
+                                       parse_mode=ParseMode.HTML)
+        else:
+            await message.answer(ut.getDescGame(board_game), parse_mode=ParseMode.HTML)
+        await ut.BoardGame.name.set()
+        await message.answer("Укажите дату доставки: ", reply_markup=await SimpleCalendar().start_calendar())
     except:
         try:
-            print("try")
+            print("second try")
             response = requests.get(f"https://humorous-ringtail-abnormally.ngrok-free.app/addBoardGameInCirculation"
                                     f"?ID_Owner={message.from_user.id}&ID_boardgame={board_game['ID']}")
             print(response.status_code)
