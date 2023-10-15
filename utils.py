@@ -6,6 +6,15 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from yarl import URL
 
+from urllib.parse import urlparse
+
+def is_url(url):
+  try:
+    result = urlparse(url)
+    return all([result.scheme, result.netloc])
+  except ValueError:
+    return False
+
 # id стикеров для приветствия
 hello_stickers = ['CAACAgIAAxkBAAEEcyJiVZ0sqQenNM6ER3msbikbMsJQRQACjQgAAnlc4gk0y_uYceajxCME',
                   'CAACAgIAAxkBAAEEcyRiVZ05qVBBZCZWl2vJqtB29m2c3wACuAIAAi8P8AZAVAABvGPVXi0jBA',
@@ -62,27 +71,27 @@ def create_faq_msg():
 def create_first_player_msg():
     msg =   f'Первая аренда! \n\n' \
             f'Настолки – это круто! У нас огромная база, ты обязательно найдешь своё 💞 \n\n' \
-            f'Выбери категорию, которая тебе по душе: ' 
+            f'Выбери категорию, которая тебе по душе: '
     return msg
 
 def create_random_board_game_msg():
     msg =   f'Рандом \n\n' \
-            f'Не знаешь, что выбрать? Брось кубик и положись на удачу 🎲 \n\n' 
+            f'Не знаешь, что выбрать? Брось кубик и положись на удачу 🎲 \n\n'
     return msg
 
 def create_before_check_order_details_msg():
     msg =   f'🏁 Отлично! \n\n' \
-            f'Мы почти закончили, осталось только внимательно проверить детали заказа.' 
+            f'Мы почти закончили, осталось только внимательно проверить детали заказа.'
     return msg
 
-def create_check_order_details_msg(order_id, list_of_board_games, 
+def create_check_order_details_msg(order_id, list_of_board_games,
                                    delivery_date, return_date , owner):
-    
+
     msg =   f'📦 **Заказ #{order_id}** \n' \
             f'📆 С {delivery_date} по {return_date} \n' \
             f'Статус: **в процессе **, \n\n' \
             f'**Состав** \n' \
-        
+
     for i in range(len(list_of_board_games)):
         msg += f'☑️ {list_of_board_games[i]} \n'
 
@@ -96,14 +105,24 @@ rent_add_text = "О, Настолочный Владыка!\n" \
 
 
 def getDescGame(json):
-    return f'📦Название: {json["name"]} {json["world_rating"]}⭐\n\n' \
-           f'Краткое описание: \n {json["desc"]}\n\n' \
-           f'🕐 {json["middle_game_time"]} мин\n' \
-           f'👥 {json["min_players"]}-{json["max_players"]} игроков\n' \
-           f'⚠ Возраст +{json["age"]}\n' \
-           f'💡 {json["category"]} сложность\n\n' \
-           f"📜 <a href='{json['rools']}'>Ссылка на правила</a>\n" \
-           f'💰 Цена: {json["price_day"]}/рублей в день'
+    if is_url(json['Rools']):
+        return f'📦Название: {json["Status"]} {json["Rating"]}⭐\n\n' \
+               f'Краткое описание: \n {json["Description"]}\n\n' \
+               f'🕐 {json["Middle_game_time"]} мин\n' \
+               f'👥 {json["Min_players"]}-{json["Max_players"]} игроков\n' \
+               f'⚠ Возраст +{json["Age"]}\n' \
+               f'💡 {json["Category"]} сложность\n\n' \
+               f"📜 <a href='{json['Rools']}'>Ссылка на правила</a>\n" \
+               f'💰 Цена: {json["Price_per_day"]}/рублей в день'
+    else:
+        return f'📦Название: {json["Status"]} {json["Rating"]}⭐\n\n' \
+               f'Краткое описание: \n {json["Description"]}\n\n' \
+               f'🕐 {json["Middle_game_time"]} мин\n' \
+               f'👥 {json["Min_players"]}-{json["Max_players"]} игроков\n' \
+               f'⚠ Возраст +{json["Age"]}\n' \
+               f'💡 {json["Category"]} сложность\n\n' \
+               f'💰 Цена: {json["Price_per_day"]}/рублей в день'
+
 
 def getDescGameFromClass(json):
     return f'📦Название: {json["name"]} {json["rating"]}⭐\n\n' \
